@@ -15,6 +15,12 @@ const useClienteStore = create((set) => ({
     return res;
   },
 
+  setCliente: (cliente, token) => {
+    localStorage.setItem('cliente_token', token);
+    localStorage.setItem('cliente', JSON.stringify(cliente));
+    set({ cliente, token });
+  },
+
   logout: () => {
     localStorage.removeItem('cliente_token');
     localStorage.removeItem('cliente');

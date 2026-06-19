@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
-import ClienteLogin from './pages/ClienteLogin';
 import ClienteDashboard from './pages/ClienteDashboard';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
@@ -20,7 +19,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/cliente/login" element={<ClienteLogin />} />
+        <Route path="/cliente/login" element={<Login />} />
         <Route path="/cliente/dashboard" element={<ClienteDashboard />} />
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
