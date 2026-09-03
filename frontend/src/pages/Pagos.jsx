@@ -3,7 +3,7 @@ import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, Clock, Upload, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Upload, DollarSign, Search } from 'lucide-react';
 
 const columns = [
   { key: 'fecha', label: 'Fecha', render: (r) => new Date(r.fecha).toLocaleDateString() },
@@ -42,10 +42,34 @@ export default function Pagos() {
   const [efectivoForm, setEfectivoForm] = useState({ cliente_id: '', credito_id: '', monto: '', observacion: '' });
   const [submittingEfectivo, setSubmittingEfectivo] = useState(false);
 
-  const load = async () => {
-    const res = await api.get('/pagos');
+  const [filtroMetodo, setFiltroMetodo] = useState('');
+  const [filtroDesde, setFiltroDesde] = useState('');
+  const [filtroHasta, setFiltroHasta] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('');
+
+  const load = async (params = {}) => {
+    const res = await api.get('/pagos', { params });
     setData(res.data.data || []);
     setLoading(false);
+  };
+
+  const aplicarFiltros = () => {
+    setLoading(true);
+    const params = {};
+    if (filtroMetodo) params.metodo_pago = filtroMetodo;
+    if (filtroDesde) params.desde = new Date(filtroDesde).toISOString();
+    if (filtroHasta) params.hasta = new Date(new Date(filtroHasta).setHours(23, 59, 59)).toISOString();
+    if (filtroCliente) params.cliente = filtroCliente;
+    load(params);
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroMetodo('');
+    setFiltroDesde('');
+    setFiltroHasta('');
+    setFiltroCliente('');
+    setLoading(true);
+    load();
   };
 
   const loadPendientes = async () => {
@@ -186,8 +210,69 @@ export default function Pagos() {
       </div>
 
       {tab === 'todos' && (
-        <div className="bg-white rounded-lg shadow">
-          <DataTable columns={columns} data={data} loading={loading} />
+        <div>
+          <div className="bg-white rounded-lg shadow p-4 mb-4">
+            <div className="flex flex-col md:flex-row gap-3 items-end">
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Buscar cliente (nombre o cédula)</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Juan, Pérez, 12345..."
+                  value={filtroCliente}
+                  onChange={(e) => setFiltroCliente(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Desde</label>
+                <input
+                  type="date"
+                  value={filtroDesde}
+                  onChange={(e) => setFiltroDesde(e.target.value)}
+                  className="border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Hasta</label>
+                <input
+                  type="date"
+                  value={filtroHasta}
+                  onChange={(e) => setFiltroHasta(e.target.value)}
+                  className="border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Método de pago</label>
+                <select
+                  value={filtroMetodo}
+                  onChange={(e) => setFiltroMetodo(e.target.value)}
+                  className="border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">Todos</option>
+                  <option value="NEQUI">Nequi</option>
+                  <option value="BANCOLOMBIA">Bancolombia</option>
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="DAVIPLATA">Daviplata</option>
+                  <option value="OTRO">Otro</option>
+                </select>
+              </div>
+              <button
+                onClick={aplicarFiltros}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-1"
+              >
+                <Search size={16} /> Filtrar
+              </button>
+              <button
+                onClick={limpiarFiltros}
+                className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-300"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow">
+            <DataTable columns={columns} data={data} loading={loading} />
+          </div>
         </div>
       )}
 
