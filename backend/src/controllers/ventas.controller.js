@@ -99,7 +99,7 @@ exports.crearVenta = async (req, res) => {
 
 exports.listarVentas = async (req, res) => {
   try {
-    const { tipo_venta, estado, cliente_id, desde, hasta, page, limit } = req.query;
+    const { tipo_venta, estado, cliente_id, cliente, desde, hasta, page, limit } = req.query;
     const pageSize = Math.min(parseInt(limit) || 50, 200);
     const from = ((parseInt(page) || 1) - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -110,6 +110,22 @@ exports.listarVentas = async (req, res) => {
     if (tipo_venta) query = query.eq('tipo_venta', tipo_venta);
     if (estado) query = query.eq('estado', estado);
     if (cliente_id) query = query.eq('cliente_id', cliente_id);
+
+    // Búsqueda de cliente por nombre/cédula: primero obtenemos los IDs
+    if (cliente) {
+      const { data: clientesMatch } = await supabase
+        .from('clientes')
+        .select('id')
+        .or(`nombres.ilike.%${cliente}%,apellidos.ilike.%${cliente}%,cedula.ilike.%${cliente}%`)
+        .limit(200);
+
+      const ids = (clientesMatch || []).map((c) => c.id);
+      if (ids.length === 0) {
+        return res.json({ ok: true, data: [], total: 0, page: parseInt(page) || 1, pageSize });
+      }
+      query = query.in('cliente_id', ids);
+    }
+
     if (desde) query = query.gte('fecha', desde);
     if (hasta) query = query.lte('fecha', hasta);
 
