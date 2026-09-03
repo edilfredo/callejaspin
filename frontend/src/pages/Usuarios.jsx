@@ -9,7 +9,17 @@ const columns = [
   { key: 'apellidos', label: 'Apellidos' },
   { key: 'email', label: 'Email' },
   { key: 'rol', label: 'Rol' },
-  { key: 'estado', label: 'Estado' },
+  {
+    key: 'estado', label: 'Estado',
+    render: (row) => {
+      const activo = row.estado === true || row.estado === 'ACTIVO';
+      return (
+        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {activo ? 'ACTIVO' : 'INACTIVO'}
+        </span>
+      );
+    }
+  },
 ];
 
 export default function Usuarios() {
@@ -37,6 +47,28 @@ export default function Usuarios() {
     setEditing(row);
     setForm({ nombres: row.nombres, apellidos: row.apellidos, email: row.email, password: '', rol: row.rol });
     setModal(true);
+  };
+
+  const toggleStatus = async (row) => {
+    const nuevoEstado = !(row.estado === true || row.estado === 'ACTIVO');
+    try {
+      await api.put(`/usuarios/${row.id}`, { estado: nuevoEstado });
+      toast.success(nuevoEstado ? 'Usuario activado' : 'Usuario desactivado');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.mensaje || 'Error');
+    }
+  };
+
+  const eliminar = async (row) => {
+    if (!window.confirm(`¿Eliminar al usuario ${row.nombres} ${row.apellidos}?`)) return;
+    try {
+      await api.delete(`/usuarios/${row.id}`);
+      toast.success('Usuario eliminado');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.mensaje || 'Error');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -68,7 +100,7 @@ export default function Usuarios() {
       </div>
 
       <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} />
+        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} onToggleStatus={toggleStatus} onDelete={eliminar} />
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar usuario' : 'Nuevo usuario'}>

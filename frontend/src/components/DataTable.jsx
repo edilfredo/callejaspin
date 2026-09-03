@@ -43,8 +43,8 @@ export default function DataTable({ columns, data, loading, onEdit, onDelete, on
                       </button>
                     )}
                     {onToggleStatus && (
-                      <button onClick={() => onToggleStatus(row)} className={`hover:underline text-xs ${row.estado === 'ACTIVO' ? 'text-red-600' : 'text-green-600'}`}>
-                        {row.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'}
+                      <button onClick={() => onToggleStatus(row)} className={`hover:underline text-xs ${row.estado === true || row.estado === 'ACTIVO' ? 'text-red-600' : 'text-green-600'}`}>
+                        {(row.estado === true || row.estado === 'ACTIVO') ? 'Desactivar' : 'Activar'}
                       </button>
                     )}
                     {onDelete && (
