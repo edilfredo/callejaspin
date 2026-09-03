@@ -11,8 +11,8 @@ const columns = [
   { key: 'telefono', label: 'Teléfono' },
   { key: 'email', label: 'Email' },
   { key: 'estado', label: 'Estado', render: (r) => (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.estado === 'ACTIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-      {r.estado || 'ACTIVO'}
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${(r.estado === true || r.estado === 'ACTIVO') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {(r.estado === true || r.estado === 'ACTIVO') ? 'ACTIVO' : 'INACTIVO'}
     </span>
   )},
 ];
@@ -30,7 +30,7 @@ export default function Clientes() {
     setLoading(true);
     const params = {};
     if (search) params.search = search;
-    if (estadoFilter) params.estado = estadoFilter;
+    if (estadoFilter) params.estado = estadoFilter === 'activo' ? 'true' : 'false';
     const res = await api.get('/clientes', { params });
     setData(res.data.data || []);
     setLoading(false);
@@ -68,10 +68,21 @@ export default function Clientes() {
   };
 
   const toggleStatus = async (row) => {
-    const nuevoEstado = row.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+    const nuevoEstado = !(row.estado === true || row.estado === 'ACTIVO');
     try {
       await api.put(`/clientes/${row.id}`, { estado: nuevoEstado });
-      toast.success(`Cliente ${nuevoEstado === 'ACTIVO' ? 'activado' : 'desactivado'}`);
+      toast.success(nuevoEstado ? 'Cliente activado' : 'Cliente desactivado');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.mensaje || 'Error');
+    }
+  };
+
+  const eliminar = async (row) => {
+    if (!window.confirm(`¿Eliminar al cliente ${row.nombres} ${row.apellidos}?`)) return;
+    try {
+      await api.delete(`/clientes/${row.id}`);
+      toast.success('Cliente eliminado');
       load();
     } catch (err) {
       toast.error(err.response?.data?.mensaje || 'Error');
@@ -98,12 +109,12 @@ export default function Clientes() {
           className="border rounded-lg px-3 py-2 text-sm"
         >
           <option value="">Todos los estados</option>
-          <option value="ACTIVO">Activo</option>
-          <option value="INACTIVO">Inactivo</option>
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
         </select>
       </div>
       <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} onToggleStatus={toggleStatus} />
+        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} onToggleStatus={toggleStatus} onDelete={eliminar} />
       </div>
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar cliente' : 'Nuevo cliente'}>
         <form onSubmit={handleSubmit} className="space-y-3">

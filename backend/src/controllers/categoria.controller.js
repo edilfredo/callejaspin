@@ -40,11 +40,12 @@ exports.obtener = async (req, res) => {
 exports.actualizar = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion } = req.body;
+    const { nombre, descripcion, estado } = req.body;
 
     const campos = {};
     if (nombre) campos.nombre = nombre;
     if (descripcion !== undefined) campos.descripcion = descripcion;
+    if (estado !== undefined) campos.estado = estado;
 
     const { data, error } = await supabase.from('categorias').update(campos).eq('id', id).select().single();
     if (error) return res.status(400).json({ ok: false, mensaje: error.message });

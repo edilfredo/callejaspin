@@ -8,7 +8,11 @@ const columns = [
   { key: 'codigo', label: 'Código' },
   { key: 'nombre', label: 'Nombre' },
   { key: 'descripcion', label: 'Descripción' },
-  { key: 'estado', label: 'Estado' },
+  { key: 'estado', label: 'Estado', render: (r) => (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${(r.estado === true || r.estado === 'ACTIVO') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      {(r.estado === true || r.estado === 'ACTIVO') ? 'ACTIVO' : 'INACTIVO'}
+    </span>
+  )},
 ];
 
 export default function Categorias() {
@@ -55,6 +59,28 @@ export default function Categorias() {
     }
   };
 
+  const toggleStatus = async (row) => {
+    const nuevoEstado = !(row.estado === true || row.estado === 'ACTIVO');
+    try {
+      await api.put(`/categorias/${row.id}`, { estado: nuevoEstado });
+      toast.success(nuevoEstado ? 'Categoría activada' : 'Categoría desactivada');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.mensaje || 'Error');
+    }
+  };
+
+  const eliminar = async (row) => {
+    if (!window.confirm(`¿Eliminar la categoría ${row.nombre}?`)) return;
+    try {
+      await api.delete(`/categorias/${row.id}`);
+      toast.success('Categoría eliminada');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.mensaje || 'Error');
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -62,7 +88,7 @@ export default function Categorias() {
         <button onClick={openCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">+ Nueva categoría</button>
       </div>
       <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} />
+        <DataTable columns={columns} data={data} loading={loading} onEdit={openEdit} onToggleStatus={toggleStatus} onDelete={eliminar} />
       </div>
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar categoría' : 'Nueva categoría'}>
         <form onSubmit={handleSubmit} className="space-y-3">

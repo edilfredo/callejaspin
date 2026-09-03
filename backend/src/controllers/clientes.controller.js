@@ -32,7 +32,8 @@ exports.listar = async (req, res) => {
       query = query.or(`cedula.ilike.%${search}%,nombres.ilike.%${search}%,apellidos.ilike.%${search}%,email.ilike.%${search}%`);
     }
     if (estado) {
-      query = query.eq('estado', estado);
+      const filtroEstado = estado === 'true' || estado === 'activo' || estado === 'ACTIVO';
+      query = query.eq('estado', filtroEstado);
     }
 
     const { data, error, count } = await query.order('fecha_registro', { ascending: false });
@@ -59,7 +60,7 @@ exports.obtener = async (req, res) => {
 exports.actualizar = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cedula, nombres, apellidos, telefono, direccion, email, password } = req.body;
+    const { cedula, nombres, apellidos, telefono, direccion, email, password, estado } = req.body;
 
     const campos = {};
     if (cedula) campos.cedula = cedula;
@@ -69,6 +70,7 @@ exports.actualizar = async (req, res) => {
     if (direccion !== undefined) campos.direccion = direccion;
     if (email) campos.email = email;
     if (password) campos.password = await bcrypt.hash(password, 10);
+    if (estado !== undefined) campos.estado = estado;
 
     const { data, error } = await supabase.from('clientes').update(campos).eq('id', id).select().single();
     if (error) return res.status(400).json({ ok: false, mensaje: error.message });
