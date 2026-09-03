@@ -4,19 +4,30 @@ const path = require('path');
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://callejaspin.vercel.app')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
+
+//  CORS ya maneja OPTIONS automáticamente
+
+// JSON middleware
 app.use(express.json());
+
+// archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/', (req, res) => {
-  res.json({ ok: true, mensaje: 'API funcionando' });
-});
-
-// Rutas públicas
+// rutas públicas
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/test', require('./routes/test.routes'));
 
-// Rutas protegadas
+// rutas protegidas
 app.use('/api/usuarios', require('./routes/usuarios.routes'));
 app.use('/api/clientes', require('./routes/clientes.routes'));
 app.use('/api/categorias', require('./routes/categoria.routes'));
