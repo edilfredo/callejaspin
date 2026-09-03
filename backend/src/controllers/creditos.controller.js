@@ -21,7 +21,7 @@ exports.crearCredito = async (req, res) => {
 
 exports.listarCreditos = async (req, res) => {
   try {
-    const { estado, cliente_id, page, limit } = req.query;
+    const { estado, cliente_id, cliente, desde, hasta, page, limit } = req.query;
     const pageSize = Math.min(parseInt(limit) || 50, 200);
     const from = ((parseInt(page) || 1) - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -31,6 +31,24 @@ exports.listarCreditos = async (req, res) => {
 
     if (estado) query = query.eq('estado', estado);
     if (cliente_id) query = query.eq('cliente_id', cliente_id);
+
+    // Búsqueda de cliente por nombre/cédula: primero obtenemos los IDs
+    if (cliente) {
+      const { data: clientesMatch } = await supabase
+        .from('clientes')
+        .select('id')
+        .or(`nombres.ilike.%${cliente}%,apellidos.ilike.%${cliente}%,cedula.ilike.%${cliente}%`)
+        .limit(200);
+
+      const ids = (clientesMatch || []).map((c) => c.id);
+      if (ids.length === 0) {
+        return res.json({ ok: true, data: [], total: 0, page: parseInt(page) || 1, pageSize });
+      }
+      query = query.in('cliente_id', ids);
+    }
+
+    if (desde) query = query.gte('fecha_inicio', desde);
+    if (hasta) query = query.lte('fecha_inicio', hasta);
 
     const { data, error, count } = await query.order('fecha_inicio', { ascending: false }).range(from, to);
     if (error) return res.status(400).json({ ok: false, mensaje: error.message });

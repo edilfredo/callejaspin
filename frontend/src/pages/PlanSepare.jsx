@@ -3,7 +3,7 @@ import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
-import { Package } from 'lucide-react';
+import { Package, Search } from 'lucide-react';
 
 const columns = [
   { key: 'fecha_limite', label: 'Vence', render: (r) => r.fecha_limite ? new Date(r.fecha_limite).toLocaleDateString() : '-' },
@@ -23,9 +23,14 @@ export default function PlanSepare() {
   const [selected, setSelected] = useState(null);
   const [monto, setMonto] = useState('');
 
-  const load = async () => {
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroDesde, setFiltroDesde] = useState('');
+  const [filtroHasta, setFiltroHasta] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('');
+
+  const load = async (params = {}) => {
     try {
-      const res = await api.get('/plan-separe');
+      const res = await api.get('/plan-separe', { params });
       setData(res.data.data || []);
     } catch (err) {
       console.error(err);
@@ -36,6 +41,25 @@ export default function PlanSepare() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const aplicarFiltros = () => {
+    setLoading(true);
+    const params = {};
+    if (filtroEstado) params.estado = filtroEstado;
+    if (filtroDesde) params.desde = new Date(filtroDesde).toISOString();
+    if (filtroHasta) params.hasta = new Date(new Date(filtroHasta).setHours(23, 59, 59)).toISOString();
+    if (filtroCliente) params.cliente = filtroCliente;
+    load(params);
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroEstado('');
+    setFiltroDesde('');
+    setFiltroHasta('');
+    setFiltroCliente('');
+    setLoading(true);
+    load();
+  };
 
   const openAbono = (row) => {
     setSelected(row);
@@ -60,6 +84,61 @@ export default function PlanSepare() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Plan Separe</h1>
       </div>
+
+      <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="flex flex-col md:flex-row gap-3 items-end">
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs font-medium text-slate-500 mb-1">Buscar cliente (nombre o cédula)</label>
+            <input
+              type="text"
+              placeholder="Ej: Juan, Pérez, 12345..."
+              value={filtroCliente}
+              onChange={(e) => setFiltroCliente(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Desde</label>
+            <input
+              type="date"
+              value={filtroDesde}
+              onChange={(e) => setFiltroDesde(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Hasta</label>
+            <input
+              type="date"
+              value={filtroHasta}
+              onChange={(e) => setFiltroHasta(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Estado</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              <option value="ACTIVO">Activo</option>
+              <option value="COMPLETADO">Completado</option>
+              <option value="VENCIDO">Vencido</option>
+            </select>
+          </div>
+          <button
+            onClick={aplicarFiltros}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-1"
+          >
+            <Search size={16} /> Filtrar
+          </button>
+          <button
+            onClick={limpiarFiltros}
+            className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-300"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow">
         <DataTable columns={columns} data={data} loading={loading} onEdit={openAbono} />
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
-import { DollarSign, ArrowLeftRight, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, ArrowLeftRight, Package, ChevronDown, ChevronUp, Search } from 'lucide-react';
 
 const columns = [
   { key: 'fecha_inicio', label: 'Inicio', render: (r) => r.fecha_inicio ? new Date(r.fecha_inicio).toLocaleDateString() : '-' },
@@ -24,12 +24,43 @@ export default function Creditos() {
   const [loadingPagos, setLoadingPagos] = useState(false);
   const [expanded, setExpanded] = useState(null);
 
-  useEffect(() => {
-    api.get('/creditos')
-      .then((res) => setData(res.data.data || []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroDesde, setFiltroDesde] = useState('');
+  const [filtroHasta, setFiltroHasta] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('');
+
+  const load = async (params = {}) => {
+    try {
+      const res = await api.get('/creditos', { params });
+      setData(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const aplicarFiltros = () => {
+    setLoading(true);
+    const params = {};
+    if (filtroEstado) params.estado = filtroEstado;
+    if (filtroDesde) params.desde = new Date(filtroDesde).toISOString();
+    if (filtroHasta) params.hasta = new Date(new Date(filtroHasta).setHours(23, 59, 59)).toISOString();
+    if (filtroCliente) params.cliente = filtroCliente;
+    load(params);
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroEstado('');
+    setFiltroDesde('');
+    setFiltroHasta('');
+    setFiltroCliente('');
+    setLoading(true);
+    load();
+  };
 
   const verDetalle = async (credito) => {
     setSelected(credito);
@@ -49,6 +80,60 @@ export default function Creditos() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Créditos</h1>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="flex flex-col md:flex-row gap-3 items-end">
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs font-medium text-slate-500 mb-1">Buscar cliente (nombre o cédula)</label>
+            <input
+              type="text"
+              placeholder="Ej: Juan, Pérez, 12345..."
+              value={filtroCliente}
+              onChange={(e) => setFiltroCliente(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Desde</label>
+            <input
+              type="date"
+              value={filtroDesde}
+              onChange={(e) => setFiltroDesde(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Hasta</label>
+            <input
+              type="date"
+              value={filtroHasta}
+              onChange={(e) => setFiltroHasta(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Estado</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              <option value="ACTIVO">Activo</option>
+              <option value="PAGADO">Pagado</option>
+              <option value="VENCIDO">Vencido</option>
+            </select>
+          </div>
+          <button
+            onClick={aplicarFiltros}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-1"
+          >
+            <Search size={16} /> Filtrar
+          </button>
+          <button
+            onClick={limpiarFiltros}
+            className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-300"
+          >
+            Limpiar
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
