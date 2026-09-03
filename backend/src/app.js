@@ -1,16 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://callejaspin.vercel.app')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: allowedOrigins.length ? allowedOrigins : true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }));
@@ -39,5 +40,20 @@ app.use('/api/plan-separe', require('./routes/plan_separe.routes'));
 app.use('/api/pagos', require('./routes/pagos.routes'));
 app.use('/api/reportes', require('./routes/reportes.routes'));
 app.use('/api/dashboard', require('./routes/dashboard.routes'));
+
+// Ruta raíz informativa (evita "Cannot GET /")
+app.get('/', (req, res) => {
+  res.json({ ok: true, mensaje: 'API funcionando' });
+});
+
+// Servir frontend compilado (despliegue unificado en Render)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA: cualquier ruta no capturada por la API devuelve index.html (Express 5 usa *splat)
+  app.get('*splat', (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 module.exports = app;

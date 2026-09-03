@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: callejaspin-backend
+    name: callejaspin
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm run build:all
     startCommand: npm start
     healthCheckPath: /api/test/db
     plan: free
@@ -11,7 +11,7 @@ services:
       - key: PORT
         value: 3000
       - key: ALLOWED_ORIGINS
-        value: https://callejaspin.vercel.app
+        value: ""
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
