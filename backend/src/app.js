@@ -41,14 +41,18 @@ app.use('/api/pagos', require('./routes/pagos.routes'));
 app.use('/api/reportes', require('./routes/reportes.routes'));
 app.use('/api/dashboard', require('./routes/dashboard.routes'));
 
-// Ruta raíz informativa (evita "Cannot GET /")
-app.get('/', (req, res) => {
-  res.json({ ok: true, mensaje: 'API funcionando' });
-});
+// Ruta raíz informativa SOLO si no hay frontend compilado
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+const hasFrontend = fs.existsSync(frontendDist);
+
+if (!hasFrontend) {
+  app.get('/', (req, res) => {
+    res.json({ ok: true, mensaje: 'API funcionando' });
+  });
+}
 
 // Servir frontend compilado (despliegue unificado en Render)
-const frontendDist = path.join(__dirname, '../../frontend/dist');
-if (fs.existsSync(frontendDist)) {
+if (hasFrontend) {
   app.use(express.static(frontendDist));
   // SPA: cualquier ruta no capturada por la API devuelve index.html (Express 5 usa *splat)
   app.get('*splat', (req, res) => {
