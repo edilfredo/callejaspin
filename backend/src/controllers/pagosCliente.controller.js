@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const { subirComprobante } = require('../utils/storage');
 
 exports.solicitarPago = async (req, res) => {
   try {
@@ -46,9 +47,10 @@ exports.solicitarPago = async (req, res) => {
       return res.status(403).json({ ok: false, mensaje: 'Este crédito no te pertenece' });
     }
 
+    // Subir comprobante a Supabase Storage (si existe)
     let comprobanteUrl = null;
     if (req.file) {
-      comprobanteUrl = `/uploads/${req.file.filename}`;
+      comprobanteUrl = await subirComprobante(req.file, 'pagos');
     }
 
     const { data: pago, error: errPago } = await supabase
